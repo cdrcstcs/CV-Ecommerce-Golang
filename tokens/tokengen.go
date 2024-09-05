@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/akhil/ecommerce-yt/database"
+	"ecommerce/database"
 	"github.com/joho/godotenv"
 	jwt "github.com/dgrijalva/jwt-go"
 	"go.mongodb.org/mongo-driver/bson"
