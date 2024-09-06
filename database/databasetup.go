@@ -1,6 +1,4 @@
 package database
-
-//
 import (
 	"context"
 	"fmt"
@@ -11,7 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"github.com/joho/godotenv"
 )
-
 func DBSet() *mongo.Client {
 	err := godotenv.Load()
     if err != nil {
@@ -28,7 +25,6 @@ func DBSet() *mongo.Client {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	err = client.Ping(context.TODO(), nil)
 	if err != nil {
 		log.Println("failed to connect to mongodb")
@@ -37,15 +33,12 @@ func DBSet() *mongo.Client {
 	fmt.Println("Successfully Connected to the mongodb")
 	return client
 }
-
 var Client *mongo.Client = DBSet()
-
 func UserData(client *mongo.Client, CollectionName string) *mongo.Collection {
 	var collection *mongo.Collection = client.Database("Ecommerce").Collection(CollectionName)
 	return collection
 
 }
-
 func ProductData(client *mongo.Client, CollectionName string) *mongo.Collection {
 	var productcollection *mongo.Collection = client.Database("Ecommerce").Collection(CollectionName)
 	return productcollection

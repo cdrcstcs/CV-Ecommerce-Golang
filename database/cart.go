@@ -1,18 +1,14 @@
 package database
-
 import (
 	"context"
 	"errors"
 	"log"
 	"time"
-
 	"ecommerce/models"
-
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
-
 var (
 	ErrCantFindProduct    = errors.New("can't find product")
 	ErrCantDecodeProducts = errors.New("can't find product")
@@ -22,7 +18,6 @@ var (
 	ErrCantGetItem        = errors.New("cannot get item from cart ")
 	ErrCantBuyCartItem    = errors.New("cannot update the purchase")
 )
-
 func AddProductToCart(ctx context.Context, prodCollection, userCollection *mongo.Collection, productID primitive.ObjectID, userID string) error {
 	searchfromdb, err := prodCollection.Find(ctx, bson.M{"_id": productID})
 	if err != nil {
@@ -35,13 +30,11 @@ func AddProductToCart(ctx context.Context, prodCollection, userCollection *mongo
 		log.Println(err)
 		return ErrCantDecodeProducts
 	}
-
 	id, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		log.Println(err)
 		return ErrUserIDIsNotValid
 	}
-
 	filter := bson.D{primitive.E{Key: "_id", Value: id}}
 	update := bson.D{{Key: "$push", Value: bson.D{primitive.E{Key: "usercart", Value: bson.D{{Key: "$each", Value: productcart}}}}}}
 	_, err = userCollection.UpdateOne(ctx, filter, update)
@@ -50,7 +43,6 @@ func AddProductToCart(ctx context.Context, prodCollection, userCollection *mongo
 	}
 	return nil
 }
-
 func RemoveCartItem(ctx context.Context, prodCollection, userCollection *mongo.Collection, productID primitive.ObjectID, userID string) error {
 	id, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
@@ -64,9 +56,7 @@ func RemoveCartItem(ctx context.Context, prodCollection, userCollection *mongo.C
 		return ErrCantRemoveItem
 	}
 	return nil
-
 }
-
 func BuyItemFromCart(ctx context.Context, userCollection *mongo.Collection, userID string) error {
 	id, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
@@ -122,7 +112,6 @@ func BuyItemFromCart(ctx context.Context, userCollection *mongo.Collection, user
 	}
 	return nil
 }
-
 func InstantBuyer(ctx context.Context, prodCollection, userCollection *mongo.Collection, productID primitive.ObjectID, UserID string) error {
 	id, err := primitive.ObjectIDFromHex(UserID)
 	if err != nil {

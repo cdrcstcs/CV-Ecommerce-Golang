@@ -1,13 +1,9 @@
 package middleware
-
 import (
 	"net/http"
-
 	token "ecommerce/tokens"
-
 	"github.com/gin-gonic/gin"
 )
-
 func Authentication() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ClientToken := c.Request.Header.Get("token")

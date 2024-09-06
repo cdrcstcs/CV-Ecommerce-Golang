@@ -1,12 +1,10 @@
 package token
-
 import (
 	"context"
 	"fmt"
 	"log"
 	"os"
 	"time"
-
 	"ecommerce/database"
 	"github.com/joho/godotenv"
 	jwt "github.com/dgrijalva/jwt-go"
@@ -15,24 +13,16 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
 var UserData *mongo.Collection
 var SECRET_KEY string
-
 func init() {
-	// Load environment variables from .env file
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-
-	// Initialize MongoDB collection
 	UserData = database.UserData(database.Client, "Users")
-
-	// Initialize SECRET_KEY
 	SECRET_KEY = os.Getenv("SECRET_LOVE")
 }
-
 type SignedDetails struct {
 	Email         string `json:"email"`
 	First_Name    string `json:"first_name"`
@@ -40,7 +30,6 @@ type SignedDetails struct {
 	Uid           string `json:"uid"`
 	jwt.StandardClaims
 }
-
 func TokenGenerator(email string, firstname string, lastname string, uid string) (signedtoken string, signedrefreshtoken string, err error) {
 	claims := &SignedDetails{
 		Email:      email,
@@ -67,12 +56,10 @@ func TokenGenerator(email string, firstname string, lastname string, uid string)
 	}
 	return token, refreshtoken, err
 }
-
 func ValidateToken(signedtoken string) (claims *SignedDetails, msg string) {
 	token, err := jwt.ParseWithClaims(signedtoken, &SignedDetails{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(SECRET_KEY), nil
 	})
-
 	if err != nil {
 		msg = err.Error()
 		return
@@ -88,28 +75,23 @@ func ValidateToken(signedtoken string) (claims *SignedDetails, msg string) {
 	}
 	return claims, msg
 }
-
 func UpdateAllTokens(signedtoken string, signedrefreshtoken string, userid string) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
-
 	updateobj := bson.D{
 		{Key: "token", Value: signedtoken},
 		{Key: "refresh_token", Value: signedrefreshtoken},
 		{Key: "updatedat", Value: primitive.NewDateTimeFromTime(time.Now())},
 	}
-
 	upsert := true
 	filter := bson.M{"user_id": userid}
 	opt := options.UpdateOptions{
 		Upsert: &upsert,
 	}
-
 	_, err := UserData.UpdateOne(ctx, filter, bson.D{{Key: "$set", Value: updateobj}}, &opt)
 	if err != nil {
 		log.Panic(err)
 		return
 	}
-
 	fmt.Println("Tokens updated successfully")
 }

@@ -1,16 +1,13 @@
 package controllers
-
 import (
 	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
-
 	"ecommerce/database"
 	"ecommerce/models"
 	generate "ecommerce/tokens"
-
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/bson"
@@ -18,11 +15,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
-
 var UserCollection *mongo.Collection = database.UserData(database.Client, "Users")
 var ProductCollection *mongo.Collection = database.ProductData(database.Client, "Products")
 var Validate = validator.New()
-
 func HashPassword(password string) string {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	if err != nil {
@@ -30,7 +25,6 @@ func HashPassword(password string) string {
 	}
 	return string(bytes)
 }
-
 func VerifyPassword(userpassword string, givenpassword string) (bool, string) {
 	err := bcrypt.CompareHashAndPassword([]byte(givenpassword), []byte(userpassword))
 	valid := true
@@ -41,7 +35,6 @@ func VerifyPassword(userpassword string, givenpassword string) (bool, string) {
 	}
 	return valid, msg
 }
-
 func SignUp() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
@@ -56,7 +49,6 @@ func SignUp() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr})
 			return
 		}
-
 		count, err := UserCollection.CountDocuments(ctx, bson.M{"email": user.Email})
 		if err != nil {
 			log.Panic(err)
@@ -79,7 +71,6 @@ func SignUp() gin.HandlerFunc {
 		}
 		password := HashPassword(*user.Password)
 		user.Password = &password
-
 		user.Created_At, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		user.Updated_At, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		user.ID = primitive.NewObjectID()
@@ -99,7 +90,6 @@ func SignUp() gin.HandlerFunc {
 		c.JSON(http.StatusCreated, "Successfully Signed Up!!")
 	}
 }
-
 func Login() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
@@ -127,10 +117,8 @@ func Login() gin.HandlerFunc {
 		defer cancel()
 		generate.UpdateAllTokens(token, refreshToken, founduser.User_ID)
 		c.JSON(http.StatusFound, founduser)
-
 	}
 }
-
 func ProductViewerAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
@@ -150,7 +138,6 @@ func ProductViewerAdmin() gin.HandlerFunc {
 		c.JSON(http.StatusOK, "Successfully added our Product Admin!!")
 	}
 }
-
 func SearchProduct() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var productlist []models.Product
@@ -169,8 +156,6 @@ func SearchProduct() gin.HandlerFunc {
 		}
 		defer cursor.Close(ctx)
 		if err := cursor.Err(); err != nil {
-			// Don't forget to log errors. I log them really simple here just
-			// to get the point across.
 			log.Println(err)
 			c.IndentedJSON(400, "invalid")
 			return
@@ -180,7 +165,6 @@ func SearchProduct() gin.HandlerFunc {
 
 	}
 }
-
 func SearchProductByQuery() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var searchproducts []models.Product
