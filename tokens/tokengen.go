@@ -16,7 +16,7 @@ import (
 var UserData *mongo.Collection
 var SECRET_KEY string
 func init() {
-	err := godotenv.Load()
+	err := godotenv.Load("D:/CV-Projects/MainCV/CV-Ecommerce-Golang/.env")
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}

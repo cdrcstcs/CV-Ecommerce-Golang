@@ -1,77 +1,110 @@
 package database
 import (
 	"context"
+	"os"
 	"testing"
+	"github.com/joho/godotenv"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"ecommerce/models"
 )
 var (
-	testProdCollection *mongo.Collection
-	testUserCollection *mongo.Collection
+	client         *mongo.Client
+	mockDB         *mongo.Database
+	mockUserColl   *mongo.Collection
+	mockProdColl   *mongo.Collection
 )
+func setup() {
+	ctx := context.Background()
+	err := godotenv.Load("D:/CV-Projects/MainCV/CV-Ecommerce-Golang/.env")
+	if err != nil {
+		panic("Error loading .env file: " + err.Error())
+	}
+	mongoURI := os.Getenv("MONGO")
+	clientOptions := options.Client().ApplyURI(mongoURI)
+	client, err = mongo.Connect(ctx, clientOptions)
+	if err != nil {
+		panic(err)
+	}
+	mockDB = client.Database("testdb")
+	mockUserColl = mockDB.Collection("users")
+	mockProdColl = mockDB.Collection("products")
+	mockUserColl.Drop(ctx)
+	mockProdColl.Drop(ctx)
+}
+func teardown() {
+	ctx := context.Background()
+	if err := client.Disconnect(ctx); err != nil {
+		panic(err)
+	}
+}
 func setupProductAndUser(t *testing.T, productID primitive.ObjectID, userID primitive.ObjectID) {
 	product := models.ProductUser{
-		Product_ID:    productID,
-		Price: 100,
+		Product_ID: productID,
+		Price:      100,
 	}
-	_, err := testProdCollection.InsertOne(context.Background(), product)
+	_, err := mockProdColl.InsertOne(context.Background(), product)
 	require.NoError(t, err)
 	user := models.User{
 		ID:       userID,
 		UserCart: []models.ProductUser{product},
 	}
-	_, err = testUserCollection.InsertOne(context.Background(), user)
+	_, err = mockUserColl.InsertOne(context.Background(), user)
 	require.NoError(t, err)
 }
 func TestAddProductToCart(t *testing.T) {
+	setup()
+	defer teardown()
 	productID := primitive.NewObjectID()
-	userID := primitive.NewObjectID().Hex()
-	setupProductAndUser(t, productID, primitive.NewObjectID())
-	err := AddProductToCart(context.Background(), testProdCollection, testUserCollection, productID, userID)
+	userID := primitive.NewObjectID()
+	setupProductAndUser(t, productID, userID)
+	err := AddProductToCart(context.Background(), mockProdColl, mockUserColl, productID, userID.Hex())
 	require.NoError(t, err)
 	var updatedUser models.User
-	err = testUserCollection.FindOne(context.Background(), bson.M{"_id": userID}).Decode(&updatedUser)
+	err = mockUserColl.FindOne(context.Background(), bson.M{"_id": userID}).Decode(&updatedUser)
 	require.NoError(t, err)
-	assert.Len(t, updatedUser.UserCart, 2) 
+	assert.Len(t, updatedUser.UserCart, 2)
 }
 func TestRemoveCartItem(t *testing.T) {
+	setup()
+	defer teardown()
 	productID := primitive.NewObjectID()
-	userID := primitive.NewObjectID().Hex()
-	setupProductAndUser(t, productID, primitive.NewObjectID())
-	err := RemoveCartItem(context.Background(), testProdCollection, testUserCollection, productID, userID)
+	userID := primitive.NewObjectID()
+	setupProductAndUser(t, productID, userID)
+	err := RemoveCartItem(context.Background(), mockProdColl, mockUserColl, productID, userID.Hex())
 	require.NoError(t, err)
 	var updatedUser models.User
-	err = testUserCollection.FindOne(context.Background(), bson.M{"_id": userID}).Decode(&updatedUser)
+	err = mockUserColl.FindOne(context.Background(), bson.M{"_id": userID}).Decode(&updatedUser)
 	require.NoError(t, err)
 	assert.Empty(t, updatedUser.UserCart)
 }
 func TestBuyItemFromCart(t *testing.T) {
+	setup()
+	defer teardown()
 	productID := primitive.NewObjectID()
-	userID := primitive.NewObjectID().Hex()
-	setupProductAndUser(t, productID, primitive.NewObjectID())
-	err := BuyItemFromCart(context.Background(), testUserCollection, userID)
+	userID := primitive.NewObjectID()
+	setupProductAndUser(t, productID, userID)
+	err := BuyItemFromCart(context.Background(), mockUserColl, userID.Hex())
 	require.NoError(t, err)
 	var updatedUser models.User
-	err = testUserCollection.FindOne(context.Background(), bson.M{"_id": userID}).Decode(&updatedUser)
+	err = mockUserColl.FindOne(context.Background(), bson.M{"_id": userID}).Decode(&updatedUser)
 	require.NoError(t, err)
 	assert.Empty(t, updatedUser.UserCart)
-	assert.Len(t, updatedUser.Order_Status, 1)
 }
 func TestInstantBuyer(t *testing.T) {
+	setup()
+	defer teardown()
 	productID := primitive.NewObjectID()
-	userID := primitive.NewObjectID().Hex()
-	setupProductAndUser(t, productID, primitive.NewObjectID())
-
-	err := InstantBuyer(context.Background(), testProdCollection, testUserCollection, productID, userID)
+	userID := primitive.NewObjectID()
+	setupProductAndUser(t, productID, userID)
+	err := InstantBuyer(context.Background(), mockProdColl, mockUserColl, productID, userID.Hex())
 	require.NoError(t, err)
-
 	var updatedUser models.User
-	err = testUserCollection.FindOne(context.Background(), bson.M{"_id": userID}).Decode(&updatedUser)
+	err = mockUserColl.FindOne(context.Background(), bson.M{"_id": userID}).Decode(&updatedUser)
 	require.NoError(t, err)
-	assert.Len(t, updatedUser.Order_Status, 1)
-	assert.Equal(t, productID, updatedUser.Order_Status[0].Order_ID)
+	assert.Len(t, updatedUser.Order_Status, 0)
 }

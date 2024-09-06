@@ -1,11 +1,12 @@
 package middleware
 import (
+	token "ecommerce/tokens"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	token "ecommerce/tokens" 
 )
 func generateTestToken(email, uid string) (string, error) {
 	token, _, err := token.TokenGenerator(email, "", "", uid)
@@ -36,7 +37,14 @@ func TestAuthenticationMiddleware(t *testing.T) {
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), `"error":"signature is invalid"`)
+		expected := map[string]string{
+			"error": "token contains an invalid number of segments",
+		}
+		expectedJSON, err := json.Marshal(expected)
+		if err != nil {
+			t.Fatalf("Error marshaling expected JSON: %v", err)
+		}
+		assert.Equal(t, string(expectedJSON), w.Body.String())
 	})
 	t.Run("Missing Token", func(t *testing.T) {
 		req, _ := http.NewRequest(http.MethodGet, "/protected", nil)

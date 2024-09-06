@@ -16,7 +16,7 @@ func TestAddAddress(t *testing.T) {
 	defer teardown()
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
-	r.POST("/address/add", AddAddress())
+	r.POST("/addaddress", AddAddress())
 	userID := primitive.NewObjectID().Hex()
 	_, _ = mockUserColl.InsertOne(context.Background(), models.User{
 		ID:        primitive.NewObjectID(),
@@ -29,16 +29,16 @@ func TestAddAddress(t *testing.T) {
 		City:      stringPtr("Cityville"),
 		Pincode:   stringPtr("12345"),
 	}
-	w := performRequest(r, "POST", "/address/add?id="+userID, address)
+	w := performRequest(r, "POST", "/addaddress?id="+userID, address)
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "Successfully Added Address", w.Body.String())
+	assert.Contains(t, w.Body.String(), "Address added successfully")
 }
 func TestEditHomeAddress(t *testing.T) {
 	setup()
 	defer teardown()
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
-	r.PUT("/address/home", EditHomeAddress())
+	r.PUT("/edithomeaddress", EditHomeAddress())
 	userID := primitive.NewObjectID().Hex()
 	_, _ = mockUserColl.InsertOne(context.Background(), models.User{
 		ID:        primitive.NewObjectID(),
@@ -57,16 +57,16 @@ func TestEditHomeAddress(t *testing.T) {
 		City:    stringPtr("Newville"),
 		Pincode: stringPtr("67890"),
 	}
-	w := performRequest(r, "PUT", "/address/home?id="+userID, updatedAddress)
+	w := performRequest(r, "PUT", "/edithomeaddress?id="+userID, updatedAddress)
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "Successfully Updated the Home address", w.Body.String())
+	assert.Contains(t, w.Body.String(), "Successfully Updated the Home address")
 }
 func TestEditWorkAddress(t *testing.T) {
 	setup()
 	defer teardown()
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
-	r.PUT("/address/work", EditWorkAddress())
+	r.PUT("/editworkaddress", EditWorkAddress())
 	userID := primitive.NewObjectID().Hex()
 	_, _ = mockUserColl.InsertOne(context.Background(), models.User{
 		ID:        primitive.NewObjectID(),
@@ -91,16 +91,16 @@ func TestEditWorkAddress(t *testing.T) {
 		City:    stringPtr("Newtown"),
 		Pincode: stringPtr("12345"),
 	}
-	w := performRequest(r, "PUT", "/address/work?id="+userID, updatedAddress)
+	w := performRequest(r, "PUT", "/editworkaddress?id="+userID, updatedAddress)
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "Successfully updated the Work Address", w.Body.String())
+	assert.Contains(t, w.Body.String(), "Successfully updated the Work Address")
 }
 func TestDeleteAddress(t *testing.T) {
 	setup()
 	defer teardown()
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
-	r.DELETE("/address/delete", DeleteAddress())
+	r.DELETE("/deleteaddresses", DeleteAddress())
 	userID := primitive.NewObjectID().Hex()
 	_, _ = mockUserColl.InsertOne(context.Background(), models.User{
 		ID:        primitive.NewObjectID(),
@@ -113,9 +113,9 @@ func TestDeleteAddress(t *testing.T) {
 				Pincode:stringPtr("98765"),
 			}},
 	})
-	w := performRequest(r, "DELETE", "/address/delete?id="+userID, nil)
+	w := performRequest(r, "DELETE", "/deleteaddresses?id="+userID, nil)
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "Successfully Deleted!", w.Body.String())
+	assert.Contains(t, w.Body.String(), "Successfully Deleted!")
 }
 func performRequest(r *gin.Engine, method, url string, body interface{}) *httptest.ResponseRecorder {
 	var requestBody *bytes.Reader

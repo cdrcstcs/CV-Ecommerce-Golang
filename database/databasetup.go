@@ -10,7 +10,7 @@ import (
 	"github.com/joho/godotenv"
 )
 func DBSet() *mongo.Client {
-	err := godotenv.Load()
+	err := godotenv.Load("D:/CV-Projects/MainCV/CV-Ecommerce-Golang/.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}

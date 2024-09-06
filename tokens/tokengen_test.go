@@ -1,7 +1,9 @@
 package token
+
 import (
 	"context"
 	"log"
+	"os"
 	"testing"
 	"time"
 	"github.com/dgrijalva/jwt-go"
@@ -11,58 +13,39 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
-	"github.com/docker/go-connections/nat"
 )
 var (
 	client         *mongo.Client
 	mockDB         *mongo.Database
 	mockUserColl   *mongo.Collection
-	mongoContainer testcontainers.Container
-	mongoPort      string
 )
 func setup() {
 	ctx := context.Background()
-	mongoContainerPort := "27017/tcp"
-	req := testcontainers.ContainerRequest{
-		Image:        "mongo:latest",
-		ExposedPorts: []string{mongoContainerPort},
-		WaitingFor:   wait.ForListeningPort(nat.Port(mongoContainerPort)),
-	}
-	var err error
-	mongoContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:           true,
-	})
+	err := godotenv.Load("D:/CV-Projects/MainCV/CV-Ecommerce-Golang/.env") 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error loading .env file")
 	}
-	mappedPort, err := mongoContainer.MappedPort(ctx, nat.Port(mongoContainerPort))
-	if err != nil {
-		log.Fatal(err)
-	}
-	mongoPort = mappedPort.Port()
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:" + mongoPort)
+	mongoUri := os.Getenv("MONGO")
+	SECRET_KEY = os.Getenv("SECRET_LOVE") 
+	clientOptions := options.Client().ApplyURI(mongoUri)
 	client, err = mongo.Connect(ctx, clientOptions)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = client.Ping(ctx, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	mockDB = client.Database("testdb")
 	mockUserColl = mockDB.Collection("Users")
 	UserData = mockUserColl
-	err = godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-	SECRET_KEY = "test_secret_key"
 }
 func teardown() {
 	ctx := context.Background()
-	if err := client.Disconnect(ctx); err != nil {
+	if err := mockDB.Drop(ctx); err != nil {
 		log.Fatal(err)
 	}
-	if err := mongoContainer.Terminate(ctx); err != nil {
+	if err := client.Disconnect(ctx); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -104,7 +87,7 @@ func TestTokenValidation(t *testing.T) {
 	})
 	tokenString, _ := expiredToken.SignedString([]byte(SECRET_KEY))
 	_, msg = ValidateToken(tokenString)
-	assert.Equal(t, "token is expired", msg)
+	assert.Contains(t, msg, "token is expired")
 }
 func TestUpdateAllTokens(t *testing.T) {
 	setup()

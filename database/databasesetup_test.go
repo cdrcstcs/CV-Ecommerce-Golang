@@ -13,7 +13,7 @@ import (
 )
 var testClient *mongo.Client
 func TestMain(m *testing.M) {
-	err := godotenv.Load()
+	err := godotenv.Load("D:/CV-Projects/MainCV/CV-Ecommerce-Golang/.env")
 	if err != nil {
 		panic("Error loading .env file: " + err.Error())
 	}

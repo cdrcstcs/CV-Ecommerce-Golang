@@ -2,7 +2,6 @@ package main
 import (
 	"log"
 	"os"
-	"fmt"
 	"ecommerce/controllers"
 	"ecommerce/database"
 	"ecommerce/middleware"
@@ -11,9 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 func main() {
-	err := godotenv.Load()
+	err := godotenv.Load("D:/CV-Projects/MainCV/CV-Ecommerce-Golang/.env")
     if err != nil {
-        fmt.Println("Error loading .env file")
+        panic("Error loading .env file")
     }
 	port := os.Getenv("PORT")
 	if port == "" {
