@@ -11,26 +11,25 @@ import (
 )
 func DBSet() *mongo.Client {
 	err := godotenv.Load()
-    if err != nil {
-        fmt.Println("Error loading .env file")
-    }
-	log.Print("hello"+ os.Getenv("MONGO"))
-	client, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("MONGO")))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+	mongoURI := os.Getenv("MONGO")
+	if mongoURI == "" {
+		log.Fatal("MONGO environment variable not set")
+	}
+	clientOptions := options.Client().ApplyURI(mongoURI)
+	client, err := mongo.Connect(context.Background(), clientOptions)
+	if err != nil {
+		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	err = client.Connect(ctx)
+	err = client.Ping(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to ping MongoDB: %v", err)
 	}
-	err = client.Ping(context.TODO(), nil)
-	if err != nil {
-		log.Println("failed to connect to mongodb")
-		return nil
-	}
-	fmt.Println("Successfully Connected to the mongodb")
+	fmt.Println("Successfully connected to MongoDB")
 	return client
 }
 var Client *mongo.Client = DBSet()
