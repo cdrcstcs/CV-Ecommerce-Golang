@@ -1,5 +1,4 @@
 package token
-
 import (
 	"context"
 	"log"
